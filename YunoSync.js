@@ -62,7 +62,6 @@ function replaceGame(contents) {
             if (value.Type == 'ModuleScript' || value.Type == 'LocalScript' || value.Type == 'Script') {
                 // scripts and stuff
                 var type = value.Type == 'ModuleScript' ? '' : value.Type == 'LocalScript' ? '.client' : value.Type == 'Script' ? '.server' : ''
-                console.log(findAddress(curdir, value.Name))
                 if (!value.Children && findAddress(curdir, value.Name) === null) {
                     // not parented script
                     console.log(`${curdir}/${value.Name}`)
@@ -113,7 +112,6 @@ function getFile(from, path) {
                     
                     // search for folder
                     const rawName = value.split('.')[0]
-                    console.log(!fs.existsSync(prevp+'/'+rawName), fs.existsSync(prevp+'/'+value))
                     if (fs.existsSync(prevp+'/'+rawName)) {
                         // make sure folder exist
                         p = prevp + '/' + rawName
@@ -145,7 +143,6 @@ function getFile(from, path) {
 }
 
 app.post('/', function (req, res) {
-    console.log(req.body)
     if (req.body.t == 'changed') {
         const file = getFile("./game", (req.body.c.p).reverse())
         if (!fs.existsSync(file)) {
@@ -174,7 +171,6 @@ app.post('/', function (req, res) {
             fs.unlinkSync(file.folder || file.main)
         }
     } else {
-        console.log("Syncing")
         const contents = req.body
 
         replaceGame(contents)
@@ -270,16 +266,11 @@ function RemoveCopy(cur, past) {
 var previousContent = []
 
 app2.get('/', function (req, res) {
-    if (req.body.t == 'changed') {
-        console.log(req.body)
-    } else {
+    const content = Read('./game')
+    if (previousContent == null) previousContent = content
+    const deletedContents = ReadIfExist(content, previousContent)
+    content.__deleted__ = JSON.stringify(deletedContents)
 
-        const content = Read('./game')
-        if (previousContent == null) previousContent = content
-        const deletedContents = ReadIfExist(content, previousContent)
-        content.__deleted__ = JSON.stringify(deletedContents)
-
-        res.send(JSON.stringify(RemoveCopy(content, previousContent)))
-        previousContent = JSON.parse(JSON.stringify(content))
-    }
+    res.send(JSON.stringify(RemoveCopy(content, previousContent)))
+    previousContent = JSON.parse(JSON.stringify(content))
 })
